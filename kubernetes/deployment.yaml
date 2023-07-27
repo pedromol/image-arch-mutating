@@ -84,6 +84,17 @@ spec:
         - name: cert
           secret:
             secretName: image-arch-mutating-cert
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - image-arch-mutating
+              topologyKey: kubernetes.io/hostname
+      schedulerName: default-scheduler
 ---
 kind: MutatingWebhookConfiguration
 apiVersion: admissionregistration.k8s.io/v1
