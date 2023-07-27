@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: image-arch-mutating
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: image-arch-mutating-issuer
+  namespace: image-arch-mutating
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: image-arch-mutating-cert
+  namespace: image-arch-mutating
+spec:
+  commonName: image-arch-mutating.webhook.svc
+  dnsNames:
+  - image-arch-mutating.webhook
+  - image-arch-mutating.webhook.svc
+  issuerRef:
+    kind: Issuer
+    name: image-arch-mutating-issuer
+  secretName: image-arch-mutating-cert
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: image-arch-mutating
+  namespace: image-arch-mutating
+spec:
+  selector:
+    app: image-arch-mutating
+  ports:
+    - port: 443
+      targetPort: 443
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: image-arch-mutating
+  namespace: image-arch-mutating
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: image-arch-mutating
+  template:
+    metadata:
+      labels:
+        app: image-arch-mutating
+    spec:
+      containers:
+        - name: image-arch-mutating
+          image: pedromol/image-arch-mutating:latest
+          imagePullPolicy: Always
+          env:
+            - name: CERT_DIR
+              value: /etc/opt
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 443
+              scheme: HTTPS
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 443
+              scheme: HTTPS
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - name: cert
+              mountPath: /etc/opt
+              readOnly: true
+      volumes:
+        - name: cert
+          secret:
+            secretName: image-arch-mutating-cert
+---
+kind: MutatingWebhookConfiguration
+apiVersion: admissionregistration.k8s.io/v1
+metadata:
+  name: image-arch-mutating
+  annotations:
+    cert-manager.io/inject-ca-from: image-arch-mutating/image-arch-mutating-cert
+  namespace: image-arch-mutating
+webhooks:
+  - name: image-arch-mutating.webhook
+    clientConfig:
+      service:
+        namespace: image-arch-mutating
+        name: webhook
+        path: /mutate
+    rules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        operations: ["CREATE"]
+        scope: ""
+    sideEffects: None
+    admissionReviewVersions: ["v1"]
+    failurePolicy: "Ignore"
