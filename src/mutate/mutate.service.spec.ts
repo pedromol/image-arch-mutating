@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppService } from './app.service';
+import { MutateService } from './mutate.service';
 import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 
-describe('AppService', () => {
-  let appService: AppService;
+describe('MutateService', () => {
+  let mutateService: MutateService;
   let mockedResponse;
 
   const httpMock = {
@@ -26,10 +26,10 @@ describe('AppService', () => {
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
-      providers: [{ provide: HttpService, useValue: httpMock }, AppService],
+      providers: [{ provide: HttpService, useValue: httpMock }, MutateService],
     }).compile();
 
-    appService = app.get<AppService>(AppService);
+    mutateService = app.get<MutateService>(MutateService);
   });
 
   describe('Service', () => {
@@ -65,7 +65,7 @@ describe('AppService', () => {
         },
       ]);
       return expect(
-        appService.mutate(require('../test/mockAdmissionSingle.json')),
+        mutateService.mutate(require('../../test/mockAdmissionSingle.json')),
       ).resolves.toStrictEqual(expected);
     });
 
@@ -80,7 +80,7 @@ describe('AppService', () => {
         },
       };
       return expect(
-        appService.mutate(require('../test/mockAdmissionSingle.json')),
+        mutateService.mutate(require('../../test/mockAdmissionSingle.json')),
       ).resolves.toStrictEqual(expected);
     });
 
@@ -140,7 +140,7 @@ describe('AppService', () => {
         },
       ]);
       return expect(
-        appService.mutate(require('../test/mockAdmissionMulti.json')),
+        mutateService.mutate(require('../../test/mockAdmissionMulti.json')),
       ).resolves.toStrictEqual(expected);
     });
 
@@ -164,7 +164,9 @@ describe('AppService', () => {
         },
       ]);
       return expect(
-        appService.mutate(require('../test/mockAdmissionWithAffinity.json')),
+        mutateService.mutate(
+          require('../../test/mockAdmissionWithAffinity.json'),
+        ),
       ).resolves.toStrictEqual(expected);
     });
   });

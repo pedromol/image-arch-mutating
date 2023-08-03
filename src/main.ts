@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { readFileSync } from 'fs';
+import { Logger, PinoLogger } from 'nestjs-pino';
 
-const certDir = process.env['CERT_DIR'];
+const certDir = process.env['CERT_DIR'] ?? '/etc/opt';
 
 const httpsOptions = {
   cert: readFileSync(`${certDir}/tls.crt`),
@@ -11,7 +12,10 @@ const httpsOptions = {
 };
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { httpsOptions });
+  const app = await NestFactory.create(AppModule, {
+    logger: new Logger(new PinoLogger({}), {}), httpsOptions
+  });
+  app.useLogger(app.get(Logger));
   await app.listen(443);
 }
 bootstrap();

@@ -1,6 +1,5 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
-import { AxiosError } from 'axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { observe, generate } from 'fast-json-patch';
 import { Buffer } from 'buffer';
@@ -9,10 +8,10 @@ import {
   AffinityDto,
   AdmissionResponseDto,
   ContainerDto,
-} from './adminission.dto';
+} from './dto/mutate.dto';
 
 @Injectable()
-export class AppService {
+export class MutateService {
   constructor(private readonly httpService: HttpService) {}
 
   buildAffinity(body: AdmissionDto, arch: string[]): AdmissionDto {
@@ -87,11 +86,11 @@ export class AppService {
       body = this.buildAffinity(body, result);
 
       return new AdmissionResponseDto(
-        body.request.uid,
+        body.request?.uid,
         Buffer.from(JSON.stringify(generate(observer))).toString('base64'),
       );
     } catch (err) {
-      return new AdmissionResponseDto(body.request.uid);
+      return new AdmissionResponseDto(body.request?.uid);
     }
   }
 }

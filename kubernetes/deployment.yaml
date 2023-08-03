@@ -17,10 +17,10 @@ metadata:
   name: image-arch-mutating-cert
   namespace: image-arch-mutating
 spec:
-  commonName: image-arch-mutating.webhook.svc
+  commonName: image-arch-mutating.image-arch-mutating.svc
   dnsNames:
-  - image-arch-mutating.webhook
-  - image-arch-mutating.webhook.svc
+  - image-arch-mutating.image-arch-mutating
+  - image-arch-mutating.image-arch-mutating.svc
   issuerRef:
     kind: Issuer
     name: image-arch-mutating-issuer
@@ -104,18 +104,18 @@ metadata:
     cert-manager.io/inject-ca-from: image-arch-mutating/image-arch-mutating-cert
   namespace: image-arch-mutating
 webhooks:
-  - name: image-arch-mutating.webhook
+  - name: image-arch-mutating.webhook.svc
     clientConfig:
       service:
         namespace: image-arch-mutating
-        name: webhook
+        name: image-arch-mutating
         path: /mutate
     rules:
       - apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["pods"]
         operations: ["CREATE"]
-        scope: ""
+        scope: "*"
     sideEffects: None
     admissionReviewVersions: ["v1"]
-    failurePolicy: "Ignore"
+    # failurePolicy: "Ignore"
