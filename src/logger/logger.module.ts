@@ -8,7 +8,7 @@ import { Logger } from 'nestjs-pino';
     Pino.LoggerModule.forRoot({
       pinoHttp: {
         autoLogging: {
-          ignore: (req: IncomingMessage) => req?.url != '/health',
+          ignore: (req: IncomingMessage) => req?.url == '/health',
         },
       },
     }),
