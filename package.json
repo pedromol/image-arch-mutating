@@ -28,6 +28,7 @@
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/terminus": "^10.0.1",
+    "@willsoto/nestjs-prometheus": "^5.2.1",
     "axios": "^1.4.0",
     "cache-manager": "^5.2.3",
     "cache-manager-redis-store": "^3.0.1",
@@ -36,6 +37,7 @@
     "joi-decorator": "^1.1.1",
     "nestjs-pino": "^3.3.0",
     "pino-http": "^8.3.3",
+    "prom-client": "^14.2.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
