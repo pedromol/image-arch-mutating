@@ -38,6 +38,9 @@ export class EnvironmentVariables {
   )
   REDIS_PORT: number | undefined;
 
+  @mustBe(a.number().integer().min(1).default(3600))
+  CACHE_TTL: number;
+
   constructor() {
     Object.keys(process.env).forEach((key: string) => {
       this[key] = process.env[key];

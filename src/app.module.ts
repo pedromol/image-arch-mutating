@@ -6,6 +6,12 @@ import { HealthModule } from './health/health.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 @Module({
-  imports: [ConfigModule, LoggerModule, HealthModule, MutateModule, PrometheusModule.register()],
+  imports: [
+    ConfigModule,
+    LoggerModule,
+    HealthModule,
+    MutateModule,
+    PrometheusModule.register(),
+  ],
 })
-export class AppModule { }
+export class AppModule {}

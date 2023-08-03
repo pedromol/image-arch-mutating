@@ -13,7 +13,8 @@ const httpsOptions = {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: new Logger(new PinoLogger({}), {}), httpsOptions
+    logger: new Logger(new PinoLogger({}), {}),
+    httpsOptions,
   });
   app.useLogger(app.get(Logger));
   await app.listen(443);
