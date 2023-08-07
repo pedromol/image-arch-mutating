@@ -9,10 +9,11 @@ import {
   AdmissionResponseDto,
   ContainerDto,
 } from './dto/mutate.dto';
+import { Logger } from 'nestjs-pino';
 
 @Injectable()
 export class MutateService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService, private readonly loggerService: Logger) {}
 
   buildAffinity(body: AdmissionDto, arch: string[]): AdmissionDto {
     if (arch.length == 0) {
@@ -54,6 +55,7 @@ export class MutateService {
     if (!tag) {
       tag = 'latest';
     }
+    this.loggerService.log(`Searching architectures for ${image}:${tag}`);
     const { data } = await firstValueFrom(
       this.httpService
         .get<any>(
@@ -61,6 +63,7 @@ export class MutateService {
         )
         .pipe(
           catchError(() => {
+            this.loggerService.error(`Failed to retrieve image ${image}:${tag}`);
             return [];
           }),
         ),
@@ -78,18 +81,19 @@ export class MutateService {
         ),
       );
       const filtered = archies.filter((arch) => arch.length > 0);
-      const result = filtered.reduce((prev, curr) => {
+      const result = Array.from(new Set(filtered.reduce((prev, curr) => {
         return prev.filter((val) => curr.includes(val));
-      }, filtered[0]);
+      }, filtered[0]).filter((val) => val != 'unknown')));
 
       const observer = observe(body.request.object);
       body = this.buildAffinity(body, result);
-
+      this.loggerService.log(`Architectures found: ${result}`)
       return new AdmissionResponseDto(
         body.request?.uid,
         Buffer.from(JSON.stringify(generate(observer))).toString('base64'),
       );
     } catch (err) {
+      this.loggerService.error(`Failed to mutate ${err.message ?? err}`);
       return new AdmissionResponseDto(body.request?.uid);
     }
   }

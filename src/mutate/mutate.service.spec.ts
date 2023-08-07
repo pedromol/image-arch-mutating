@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MutateService } from './mutate.service';
 import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
+import { LoggerModule } from '../logger/logger.module';
 
 describe('MutateService', () => {
   let mutateService: MutateService;
@@ -27,6 +28,7 @@ describe('MutateService', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       providers: [{ provide: HttpService, useValue: httpMock }, MutateService],
+      imports: [LoggerModule],
     }).compile();
 
     mutateService = app.get<MutateService>(MutateService);
