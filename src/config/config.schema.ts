@@ -18,7 +18,6 @@ export class EnvironmentVariables {
       .when(a.ref('REDIS_ENABLED'), {
         is: a.boolean().valid(true),
         then: a.required(),
-        otherwise: a.forbidden(),
       }),
   )
   REDIS_HOST: string | undefined;
@@ -33,7 +32,6 @@ export class EnvironmentVariables {
       .when(a.ref('REDIS_ENABLED'), {
         is: a.boolean().valid(true),
         then: a.required(),
-        otherwise: a.forbidden(),
       }),
   )
   REDIS_PORT: number | undefined;
