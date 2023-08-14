@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { catchError, firstValueFrom } from 'rxjs';
 import { observe, generate } from 'fast-json-patch';
 import { Buffer } from 'buffer';
@@ -10,12 +10,15 @@ import {
   ContainerDto,
 } from './dto/mutate.dto';
 import { Logger } from 'nestjs-pino';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class MutateService {
   constructor(
     private readonly httpService: HttpService,
     private readonly loggerService: Logger,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   buildAffinity(body: AdmissionDto, arch: string[]): AdmissionDto {
@@ -59,23 +62,42 @@ export class MutateService {
       tag = 'latest';
     }
     this.loggerService.log(`Searching architectures for ${image}:${tag}`);
-    const { data } = await firstValueFrom(
-      this.httpService
-        .get<any>(
-          `https://hub.docker.com/v2/repositories/${image}/tags?name=${tag}`,
-        )
-        .pipe(
-          catchError(() => {
-            this.loggerService.error(
-              `Failed to retrieve image ${image}:${tag}`,
-            );
-            return [];
-          }),
-        ),
-    );
-    return data.results
-      .find((t: any) => t.name === tag)
-      ?.images.map((i: any) => i.architecture);
+    let result;
+
+    try {
+      result = await this.cacheManager.get(container.image);
+    } catch (err) {
+      this.loggerService.error(
+        `Failed to retrieve cache for ${image}:${tag}`,
+        err,
+      );
+    }
+
+    if (!result) {
+      const { data } = await firstValueFrom(
+        this.httpService
+          .get<any>(
+            `https://hub.docker.com/v2/repositories/${image}/tags?name=${tag}`,
+          )
+          .pipe(
+            catchError(() => {
+              this.loggerService.error(
+                `Failed to retrieve image ${image}:${tag}`,
+              );
+              return [];
+            }),
+          ),
+      );
+      result = data.results
+        .find((t: any) => t.name === tag)
+        ?.images.map((i: any) => i.architecture);
+    }
+    try {
+      await this.cacheManager.set(container.image, result);
+    } catch (err) {
+      this.loggerService.error(`Failed to set cache for ${image}:${tag}`, err);
+    }
+    return result;
   }
 
   async mutate(body: AdmissionDto): Promise<AdmissionResponseDto> {

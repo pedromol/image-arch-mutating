@@ -13,17 +13,18 @@ import StaticLogger from '../logger/logger.static';
       useFactory: async (
         configService: ConfigService,
         loggerService: LoggerService,
-      ) =>
-        ({
-          store:
-            configService.get('REDIS_ENABLED') === 'true'
-              ? await redisStore({
-                url: `redis://${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`,
+      ) => ({
+        store:
+          configService.get('REDIS_ENABLED') === 'true'
+            ? await redisStore({
+                url: `redis://${configService.get(
+                  'REDIS_HOST',
+                )}:${configService.get('REDIS_PORT')}`,
                 ttl: configService.get('CACHE_TTL'),
               })
-              : 'memory',
-          ttl: configService.get('CACHE_TTL'),
-        }),
+            : 'memory',
+        ttl: configService.get('CACHE_TTL'),
+      }),
     }),
   ],
   exports: [CacheModule, CacheManager.CacheModule],
