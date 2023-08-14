@@ -16,7 +16,7 @@ export class HealthService {
   }
 
   private setCache(): Promise<void> {
-    return this.cacheManager.set(this.localKey, this.localKey, 2);
+    return this.cacheManager.set(this.localKey, this.localKey, 5000);
   }
 
   private getCache(): Promise<string> {

@@ -1,7 +1,7 @@
 import { LoggerService, Module } from '@nestjs/common';
 import * as CacheManager from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import * as redisStore from 'cache-manager-redis-store';
+import { redisStore } from 'cache-manager-redis-yet';
 import { LoggerModule } from '../logger/logger.module';
 import StaticLogger from '../logger/logger.static';
 
@@ -10,27 +10,20 @@ import StaticLogger from '../logger/logger.static';
     CacheManager.CacheModule.registerAsync({
       imports: [ConfigModule, LoggerModule],
       inject: [ConfigService],
-      useFactory: (
+      useFactory: async (
         configService: ConfigService,
         loggerService: LoggerService,
       ) =>
         ({
           store:
             configService.get('REDIS_ENABLED') === 'true'
-              ? redisStore
+              ? await redisStore({
+                url: `redis://${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`,
+                ttl: configService.get('CACHE_TTL'),
+              })
               : 'memory',
-          host: configService.get('REDIS_HOST'),
-          port: configService.get('REDIS_PORT'),
           ttl: configService.get('CACHE_TTL'),
-          retry_strategy: (options): number => {
-            loggerService.error({ context: 'CacheModule', ...options });
-
-            if (options.attempt > 4) {
-              StaticLogger.logAndExit('CacheModule', options);
-            }
-            return options.attempt * 1000;
-          },
-        } as any),
+        }),
     }),
   ],
   exports: [CacheModule, CacheManager.CacheModule],

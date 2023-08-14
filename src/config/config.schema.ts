@@ -11,32 +11,13 @@ export class EnvironmentVariables {
   @mustBe(a.boolean().default(false))
   REDIS_ENABLED: boolean;
 
-  @mustBe(
-    a
-      .string()
-      .hostname()
-      .when(a.ref('REDIS_ENABLED'), {
-        is: a.boolean().valid(true),
-        then: a.required(),
-      }),
-  )
+  @mustBe(a.string().hostname())
   REDIS_HOST: string | undefined;
 
-  @mustBe(
-    a
-      .number()
-      .integer()
-      .min(1)
-      .max(65535)
-      .default(6379)
-      .when(a.ref('REDIS_ENABLED'), {
-        is: a.boolean().valid(true),
-        then: a.required(),
-      }),
-  )
+  @mustBe(a.number().integer().min(1).max(65535).default(6379))
   REDIS_PORT: number | undefined;
 
-  @mustBe(a.number().integer().min(1).default(3600))
+  @mustBe(a.number().integer().min(1).default(3600000))
   CACHE_TTL: number;
 
   constructor() {

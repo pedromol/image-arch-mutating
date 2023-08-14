@@ -13,7 +13,10 @@ import { Logger } from 'nestjs-pino';
 
 @Injectable()
 export class MutateService {
-  constructor(private readonly httpService: HttpService, private readonly loggerService: Logger) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly loggerService: Logger,
+  ) {}
 
   buildAffinity(body: AdmissionDto, arch: string[]): AdmissionDto {
     if (arch.length == 0) {
@@ -63,7 +66,9 @@ export class MutateService {
         )
         .pipe(
           catchError(() => {
-            this.loggerService.error(`Failed to retrieve image ${image}:${tag}`);
+            this.loggerService.error(
+              `Failed to retrieve image ${image}:${tag}`,
+            );
             return [];
           }),
         ),
@@ -81,13 +86,19 @@ export class MutateService {
         ),
       );
       const filtered = archies.filter((arch) => arch.length > 0);
-      const result = Array.from(new Set(filtered.reduce((prev, curr) => {
-        return prev.filter((val) => curr.includes(val));
-      }, filtered[0]).filter((val) => val != 'unknown')));
+      const result = Array.from(
+        new Set(
+          filtered
+            .reduce((prev, curr) => {
+              return prev.filter((val) => curr.includes(val));
+            }, filtered[0])
+            .filter((val) => val != 'unknown'),
+        ),
+      );
 
       const observer = observe(body.request.object);
       body = this.buildAffinity(body, result);
-      this.loggerService.log(`Architectures found: ${result}`)
+      this.loggerService.log(`Architectures found: ${result}`);
       return new AdmissionResponseDto(
         body.request?.uid,
         Buffer.from(JSON.stringify(generate(observer))).toString('base64'),
