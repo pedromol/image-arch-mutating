@@ -19,7 +19,7 @@ export class MutateService {
     private readonly httpService: HttpService,
     private readonly loggerService: Logger,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  ) { }
 
   buildAffinity(body: AdmissionDto, arch: string[]): AdmissionDto {
     if (arch.length == 0) {
@@ -46,6 +46,8 @@ export class MutateService {
 
     if (!body.request.object.spec.affinity) {
       body.request.object.spec.affinity = affinity;
+    } else if (body.request.object.spec.affinity.nodeAffinity?.requiredDuringSchedulingIgnoredDuringExecution?.nodeSelectorTerms?.length > 0) {
+      body.request.object.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.push(affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0])
     } else {
       body.request.object.spec.affinity = Object.assign(
         body.request.object.spec.affinity,
