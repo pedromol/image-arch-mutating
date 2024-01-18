@@ -20,6 +20,9 @@ export class EnvironmentVariables {
   @mustBe(a.number().integer().min(1).default(3600000))
   CACHE_TTL: number;
 
+  @mustBe(a.string().required())
+  IMAGE_QUERY_HOST: string | undefined;
+
   constructor() {
     Object.keys(process.env).forEach((key: string) => {
       this[key] = process.env[key];

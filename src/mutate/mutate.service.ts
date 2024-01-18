@@ -12,12 +12,14 @@ import {
 import { Logger } from 'nestjs-pino';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MutateService {
   constructor(
     private readonly httpService: HttpService,
     private readonly loggerService: Logger,
+    private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
@@ -59,18 +61,14 @@ export class MutateService {
   }
 
   async getArchies(container: ContainerDto): Promise<string[]> {
-    let [image, tag] = container.image.split(':');
-    if (!tag) {
-      tag = 'latest';
-    }
-    this.loggerService.log(`Searching architectures for ${image}:${tag}`);
+    this.loggerService.log(`Searching architectures for ${container.image}`);
     let result;
 
     try {
       result = await this.cacheManager.get(container.image);
     } catch (err) {
       this.loggerService.error(
-        `Failed to retrieve cache for ${image}:${tag}`,
+        `Failed to retrieve cache for ${container.image}`,
         err,
       );
     }
@@ -79,25 +77,23 @@ export class MutateService {
       const { data } = await firstValueFrom(
         this.httpService
           .get<any>(
-            `https://hub.docker.com/v2/repositories/${image}/tags?name=${tag}`,
+            `${this.configService.get('IMAGE_QUERY_HOST')}/${container.image}`,
           )
           .pipe(
             catchError(() => {
               this.loggerService.error(
-                `Failed to retrieve image ${image}:${tag}`,
+                `Failed to retrieve image ${container.image}`,
               );
               return [];
             }),
           ),
       );
-      result = data.results
-        .find((t: any) => t.name === tag)
-        ?.images.map((i: any) => i.architecture);
+      result = data.architectures;
     }
     try {
       await this.cacheManager.set(container.image, result);
     } catch (err) {
-      this.loggerService.error(`Failed to set cache for ${image}:${tag}`, err);
+      this.loggerService.error(`Failed to set cache for ${container.image}`, err);
     }
     return result;
   }
@@ -109,6 +105,7 @@ export class MutateService {
           this.getArchies(arch),
         ),
       );
+
       const filtered = archies.filter((arch) => arch.length > 0);
       const result = Array.from(
         new Set(
@@ -118,7 +115,7 @@ export class MutateService {
             }, filtered[0])
             .filter((val) => val != 'unknown'),
         ),
-      );
+      ).filter(a => a.startsWith('linux/')).map(a => a.replaceAll('linux/', ''));
 
       const observer = observe(body.request.object);
       body = this.buildAffinity(body, result);

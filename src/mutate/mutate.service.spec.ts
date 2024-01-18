@@ -4,6 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 import { LoggerModule } from '../logger/logger.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ConfigModule } from '@nestjs/config';
 
 describe('MutateService', () => {
   let mutateService: MutateService;
@@ -29,7 +30,7 @@ describe('MutateService', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       providers: [{ provide: HttpService, useValue: httpMock }, MutateService],
-      imports: [LoggerModule, CacheModule.register({})],
+      imports: [LoggerModule, CacheModule.register({}), ConfigModule],
     }).compile();
 
     mutateService = app.get<MutateService>(MutateService);
@@ -38,11 +39,7 @@ describe('MutateService', () => {
   describe('Service', () => {
     it('should return a single arch', async () => {
       mockedResponse = () => ({
-        data: {
-          results: [
-            { name: 'focal', images: [{ architecture: 'mockedArch' }] },
-          ],
-        },
+        data: { architectures: ['linux/mockedArch'] },
       });
       const expected = expectedResponse([
         {
@@ -87,38 +84,14 @@ describe('MutateService', () => {
       ).resolves.toStrictEqual(expected);
     });
 
-    it('should return two arch', async () => {
+    it('should return architectures in common for all containers', async () => {
       mockedResponse = (input: string) => {
         if (input.includes('focal')) {
-          return {
-            data: {
-              results: [
-                {
-                  name: 'focal',
-                  images: [
-                    { architecture: 'mockedArch' },
-                    { architecture: 'mockedArch2' },
-                  ],
-                },
-              ],
-            },
-          };
+          return { data: { architectures: ['linux/mockedArch', 'linux/mockedArch2', 'windows/mockedArchN'] } };
         } else {
-          return {
-            data: {
-              results: [
-                {
-                  name: 'bookworm',
-                  images: [
-                    { architecture: 'mockedArch' },
-                    { architecture: 'mockedArch3' },
-                  ],
-                },
-              ],
-            },
-          };
-        }
-      };
+          return { data: { architectures: ['linux/mockedArch', 'linux/mockedArch3', 'windows/mockedArchN'] } }
+        };
+      }
       const expected = expectedResponse([
         {
           op: 'add',
@@ -155,17 +128,9 @@ describe('MutateService', () => {
           ],
         },
       });
-      const expected = expectedResponse([
-        {
-          op: 'remove',
-          path: '/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/1',
-        },
-        {
-          op: 'replace',
-          path: '/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/0/matchExpressions/0/values',
-          value: ['mockedArch'],
-        },
-      ]);
+      const expected = expectedResponse([]);
+      delete expected.response.patch;
+      delete expected.response.patchType;
       return expect(
         mutateService.mutate(
           require('../../test/mockAdmissionWithAffinity.json'),
